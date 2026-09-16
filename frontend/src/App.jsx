@@ -14,11 +14,13 @@ export default function App() {
   });
   const [isChecking, setIsChecking] = useState(false);
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
   // Function to query the FastAPI /health endpoint
   const checkBackendHealth = async () => {
     setIsChecking(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/health');
+      const response = await fetch(`${API_BASE_URL}/health`);
       if (!response.ok) {
         throw new Error(`Server returned status: ${response.status}`);
       }
