@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
+import DatasetsPage from './pages/DatasetsPage';
 import { useBackendHealth } from './hooks/useBackendHealth';
-import { Database, Cpu, LineChart, Settings, Info } from 'lucide-react';
+import { Cpu, LineChart, Settings, Info } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentDataset, setCurrentDataset] = useState(null);
   const { status: backendStatus, isChecking, refreshHealth } = useBackendHealth();
 
   // Placeholder view for tabs scheduled for future milestones
@@ -49,8 +51,21 @@ export default function App() {
         />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-950/40">
-          {currentTab === 'dashboard' && <Dashboard backendStatus={backendStatus} />}
-          {currentTab === 'datasets' && renderTabPlaceholder('Datasets Management', Database, 'Milestone 2', 'Upload CSV files, validate schema, inspect row/column count, and review exploratory column profiling.')}
+          {currentTab === 'dashboard' && (
+            <Dashboard 
+              backendStatus={backendStatus} 
+              currentDataset={currentDataset}
+              onNavigateToDatasets={() => setCurrentTab('datasets')}
+            />
+          )}
+
+          {currentTab === 'datasets' && (
+            <DatasetsPage 
+              currentDataset={currentDataset} 
+              setCurrentDataset={setCurrentDataset} 
+            />
+          )}
+
           {currentTab === 'models' && renderTabPlaceholder('Machine Learning Models', Cpu, 'Milestone 5 & 6', 'Train Linear Regression and Random Forest Regressors, chronologically split validation, and compare MAE/RMSE/R² metrics.')}
           {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', LineChart, 'Milestone 7', 'Generate future predictions for 7, 14, or 30 days, view historical vs predicted charts, and export results.')}
           {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}

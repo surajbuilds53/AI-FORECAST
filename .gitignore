@@ -9,6 +9,11 @@ venv/
 env/
 ENV/
 
+# Datasets (only track sample dataset and .gitkeep)
+datasets/*
+!datasets/sample_sales.csv
+!datasets/.gitkeep
+
 # Python cache & artifacts
 __pycache__/
 *.py[cod]

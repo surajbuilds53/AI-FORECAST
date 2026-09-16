@@ -6,21 +6,20 @@ import {
   LineChart, 
   Settings, 
   Activity, 
-  HelpCircle,
   Sparkles
 } from 'lucide-react';
 
 export default function Sidebar({ currentTab, setCurrentTab }) {
   const navigationItems = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3, badge: null },
-    { id: 'datasets', name: 'Datasets', icon: Database, badge: 'Milestone 2' },
-    { id: 'models', name: 'Models', icon: Cpu, badge: 'Milestone 3' },
-    { id: 'forecasts', name: 'Forecasts', icon: LineChart, badge: 'Milestone 4' },
+    { id: 'datasets', name: 'Datasets', icon: Database, badge: 'Ready' },
+    { id: 'models', name: 'Models', icon: Cpu, badge: 'Milestone 5' },
+    { id: 'forecasts', name: 'Forecasts', icon: LineChart, badge: 'Milestone 7' },
     { id: 'settings', name: 'Settings', icon: Settings, badge: null },
   ];
 
   return (
-    <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col h-screen select-none">
+    <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col h-screen select-none shrink-0">
       {/* Brand Header */}
       <div className="h-16 flex items-center px-6 border-b border-slate-800/80 gap-3">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -61,7 +60,11 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
                 <span>{item.name}</span>
               </div>
               {item.badge && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-normal border border-slate-700/50">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-normal border ${
+                  item.badge === 'Ready' 
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                    : 'bg-slate-800 text-slate-400 border-slate-700/50'
+                }`}>
                   {item.badge}
                 </span>
               )}
@@ -74,10 +77,10 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
       <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
         <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
           <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>Milestone 1 Active</span>
+          <span>Milestone 2 Active</span>
         </div>
         <div className="text-[11px] text-slate-500 font-mono">
-          v0.1.0 • Foundation Mode
+          v0.2.0 • Data Ingestion
         </div>
       </div>
     </aside>
