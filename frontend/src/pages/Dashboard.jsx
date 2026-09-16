@@ -11,10 +11,19 @@ import {
   ShieldCheck,
   Code2,
   Activity,
-  FileCheck
+  FileCheck,
+  BrainCircuit
 } from 'lucide-react';
 
-export default function Dashboard({ backendStatus, currentDataset, onNavigateToDatasets }) {
+export default function Dashboard({ 
+  backendStatus, 
+  currentDataset, 
+  trainedModels = [], 
+  onNavigateToDatasets,
+  onNavigateToModels
+}) {
+  const latestModel = trainedModels[0];
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Welcome Banner */}
@@ -22,13 +31,13 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Milestone 2 Complete: Dataset Ingestion & Profiling Active</span>
+            <span>Milestone 5 Complete: Machine Learning Model Training Active</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
             AI Forecast — Intelligent AI/ML Forecasting Platform
           </h1>
           <p className="text-sm md:text-base text-slate-300 leading-relaxed">
-            Full-stack machine learning forecasting suite for BTech 5th-semester viva and demonstration. Real-time CSV ingestion, automated column profiling, and chronological time-series pipeline.
+            Full-stack machine learning forecasting suite for BTech 5th-semester viva and demonstration. Real Scikit-learn Linear Regression and Random Forest models trained on chronological partitions.
           </p>
         </div>
 
@@ -59,15 +68,15 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
             accentColor={currentDataset ? "emerald" : "indigo"}
           />
 
-          {/* Card 2: Model Status */}
+          {/* Card 2: Model Status (Dynamic) */}
           <StatusCard
             title="Model Status"
-            value="Engine Idle"
-            subtitle="ML pipelines ready for training"
-            badgeText="Uninitialized"
-            badgeType="default"
-            icon={Cpu}
-            accentColor="sky"
+            value={trainedModels.length > 0 ? `${trainedModels.length} Model${trainedModels.length > 1 ? 's' : ''} Trained` : "Engine Idle"}
+            subtitle={latestModel ? `${latestModel.model_name} (${latestModel.training_time_ms}ms)` : "Scikit-learn pipeline ready"}
+            badgeText={trainedModels.length > 0 ? "Models Ready" : "Uninitialized"}
+            badgeType={trainedModels.length > 0 ? "success" : "default"}
+            icon={trainedModels.length > 0 ? BrainCircuit : Cpu}
+            accentColor={trainedModels.length > 0 ? "emerald" : "sky"}
           />
 
           {/* Card 3: Forecast Status */}
@@ -85,7 +94,7 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
           <StatusCard
             title="System Status"
             value={backendStatus.healthy ? "Operational" : "Connecting"}
-            subtitle={backendStatus.healthy ? "FastAPI Backend v0.2.0" : "Verifying API health"}
+            subtitle={backendStatus.healthy ? "FastAPI Backend v0.5.0" : "Verifying API health"}
             badgeText={backendStatus.healthy ? "API Online" : "Checking"}
             badgeType={backendStatus.healthy ? "success" : "warning"}
             icon={Activity}
@@ -94,14 +103,14 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
         </div>
       </div>
 
-      {/* Quick Action Banner if no dataset loaded */}
-      {!currentDataset && (
+      {/* Quick Action Banner */}
+      {!currentDataset ? (
         <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Database className="w-5 h-5 text-indigo-400 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-white">No Dataset Loaded</p>
-              <p className="text-xs text-slate-400">Upload a CSV dataset or load the 120-day daily sales sample to explore data profiling.</p>
+              <p className="text-xs text-slate-400">Upload a CSV dataset or load the 120-day daily sales sample to start training ML models.</p>
             </div>
           </div>
           <button
@@ -112,7 +121,24 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      )}
+      ) : trainedModels.length === 0 ? (
+        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Cpu className="w-5 h-5 text-indigo-400 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-white">Dataset Ready — Train Your First Model</p>
+              <p className="text-xs text-slate-400">Train a Linear Regression baseline or Random Forest Regressor on chronological splits.</p>
+            </div>
+          </div>
+          <button
+            onClick={onNavigateToModels}
+            className="shrink-0 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-colors"
+          >
+            <span>Go to Models Page</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : null}
 
       {/* Architecture & Roadmap Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -142,7 +168,7 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
             <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-medium text-slate-200">POST /api/datasets/upload</span>
+                <span className="text-xs font-medium text-slate-200">POST /api/models/train (Scikit-learn)</span>
               </div>
               <span className="text-xs font-mono text-emerald-400">Operational</span>
             </div>
@@ -178,28 +204,28 @@ export default function Dashboard({ backendStatus, currentDataset, onNavigateToD
 
           <div className="space-y-2.5 text-xs">
             <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-emerald-400 mt-0.5">M1</span>
+              <span className="font-mono font-bold text-emerald-400 mt-0.5">M1-M4</span>
               <div>
-                <p className="font-medium text-white">Project Foundation</p>
-                <p className="text-slate-400 text-[11px]">FastAPI backend, React frontend, Tailwind CSS, health endpoints.</p>
+                <p className="font-medium text-white">Foundation, Data Upload, Preprocessing & Visualization</p>
+                <p className="text-slate-400 text-[11px]">FastAPI, React Vite, Recharts time-series and feature engineering complete.</p>
               </div>
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
             </div>
 
             <div className="flex items-start gap-3 p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
-              <span className="font-mono font-bold text-indigo-400 mt-0.5">M2</span>
+              <span className="font-mono font-bold text-indigo-400 mt-0.5">M5</span>
               <div>
-                <p className="font-medium text-white">Dataset Upload & Profiling</p>
-                <p className="text-slate-400 text-[11px]">CSV upload, validation, row/col count, missing values, column profiling.</p>
+                <p className="font-medium text-white">Model Training Pipeline</p>
+                <p className="text-slate-400 text-[11px]">Linear Regression baseline and Random Forest Regressor on chronological splits.</p>
               </div>
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold uppercase">Current</span>
             </div>
 
             <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-slate-500 mt-0.5">M3</span>
+              <span className="font-mono font-bold text-slate-500 mt-0.5">M6</span>
               <div>
-                <p className="font-medium text-slate-300">Data Preprocessing</p>
-                <p className="text-slate-500 text-[11px]">Datetime parsing, sorting, missing value handling, lag/rolling features.</p>
+                <p className="font-medium text-slate-300">Model Evaluation</p>
+                <p className="text-slate-500 text-[11px]">MAE, MSE, RMSE, R² comparison table and Actual vs Predicted charts.</p>
               </div>
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Next Milestone</span>
             </div>

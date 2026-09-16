@@ -14,6 +14,11 @@ datasets/*
 !datasets/sample_sales.csv
 !datasets/.gitkeep
 
+# ML serialized model artifacts
+*.joblib
+backend/app/ml/saved_models/*
+!backend/app/ml/saved_models/.gitkeep
+
 # Python cache & artifacts
 __pycache__/
 *.py[cod]

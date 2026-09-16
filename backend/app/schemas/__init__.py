@@ -12,6 +12,11 @@ from app.schemas.analytics import (
     DatasetStatistics,
     AnalyticsResponse,
 )
+from app.schemas.model import (
+    TrainingRequest,
+    ModelTrainingResult,
+    AvailableModelInfo,
+)
 
 __all__ = [
     "HealthResponse",
@@ -26,4 +31,7 @@ __all__ = [
     "TimeSeriesPoint",
     "DatasetStatistics",
     "AnalyticsResponse",
+    "TrainingRequest",
+    "ModelTrainingResult",
+    "AvailableModelInfo",
 ]
