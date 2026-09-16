@@ -6,6 +6,12 @@ from app.schemas.preprocessing import (
     PreprocessingResponse,
     ColumnRecommendations,
 )
+from app.schemas.analytics import (
+    AnalyticsRequest,
+    TimeSeriesPoint,
+    DatasetStatistics,
+    AnalyticsResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -16,4 +22,8 @@ __all__ = [
     "PreprocessingStepLog",
     "PreprocessingResponse",
     "ColumnRecommendations",
+    "AnalyticsRequest",
+    "TimeSeriesPoint",
+    "DatasetStatistics",
+    "AnalyticsResponse",
 ]

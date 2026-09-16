@@ -9,6 +9,7 @@ from app.services.preprocessing_service import (
     get_column_recommendations,
     execute_preprocessing,
 )
+from app.services.analytics_service import generate_analytics
 
 __all__ = [
     "process_csv_bytes",
@@ -18,4 +19,5 @@ __all__ = [
     "profile_dataframe",
     "get_column_recommendations",
     "execute_preprocessing",
+    "generate_analytics",
 ]

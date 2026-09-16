@@ -3,8 +3,9 @@ import {
   BarChart3, 
   Database, 
   Sliders,
+  LineChart as ChartIcon,
   Cpu, 
-  LineChart, 
+  TrendingUp, 
   Settings, 
   Activity, 
   Sparkles
@@ -15,8 +16,9 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3, badge: null },
     { id: 'datasets', name: 'Datasets', icon: Database, badge: 'Ready' },
     { id: 'preprocessing', name: 'Preprocessing', icon: Sliders, badge: 'Ready' },
+    { id: 'analytics', name: 'Analytics', icon: ChartIcon, badge: 'Ready' },
     { id: 'models', name: 'Models', icon: Cpu, badge: 'Milestone 5' },
-    { id: 'forecasts', name: 'Forecasts', icon: LineChart, badge: 'Milestone 7' },
+    { id: 'forecasts', name: 'Forecasts', icon: TrendingUp, badge: 'Milestone 7' },
     { id: 'settings', name: 'Settings', icon: Settings, badge: null },
   ];
 
@@ -79,10 +81,10 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
       <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
         <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
           <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>Milestone 3 Active</span>
+          <span>Milestone 4 Active</span>
         </div>
         <div className="text-[11px] text-slate-500 font-mono">
-          v0.3.0 • Feature Pipeline
+          v0.4.0 • Analytics & Trends
         </div>
       </div>
     </aside>

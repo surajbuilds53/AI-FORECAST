@@ -4,8 +4,9 @@ import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import DatasetsPage from './pages/DatasetsPage';
 import PreprocessingPage from './pages/PreprocessingPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 import { useBackendHealth } from './hooks/useBackendHealth';
-import { Cpu, LineChart, Settings, Info } from 'lucide-react';
+import { Cpu, TrendingUp, Settings, Info } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -77,8 +78,15 @@ export default function App() {
             />
           )}
 
+          {currentTab === 'analytics' && (
+            <AnalyticsPage 
+              currentDataset={currentDataset}
+              onNavigateToDatasets={() => setCurrentTab('datasets')}
+            />
+          )}
+
           {currentTab === 'models' && renderTabPlaceholder('Machine Learning Models', Cpu, 'Milestone 5 & 6', 'Train Linear Regression and Random Forest Regressors, chronologically split validation, and compare MAE/RMSE/R² metrics.')}
-          {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', LineChart, 'Milestone 7', 'Generate future predictions for 7, 14, or 30 days, view historical vs predicted charts, and export results.')}
+          {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', TrendingUp, 'Milestone 7', 'Generate future predictions for 7, 14, or 30 days, view historical vs predicted charts, and export results.')}
           {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
         </main>
       </div>
