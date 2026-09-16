@@ -390,7 +390,7 @@ export default function ForecastPage({ onNavigate }) {
               <span>• Model: {forecastResult.model_name}</span>
               <span>• Target: {forecastResult.target_column}</span>
               <span>• Steps: +{forecastResult.forecast_horizon} days</span>
-              <span>• Horizon Uncertainty: Compounding \(\sigma(h) = \text{RMSE}\sqrt{1 + 0.1(h-1)}\)</span>
+              <span>• Horizon Uncertainty: sigma(h) = RMSE * sqrt(1 + 0.1*(h-1))</span>
             </div>
           </div>
 
@@ -425,15 +425,18 @@ export default function ForecastPage({ onNavigate }) {
                 </thead>
                 <tbody className="divide-y divide-slate-800/50 text-slate-300">
                   {forecastResult.forecast_points.map((pt) => {
-                    const spread = (pt.upper_bound - pt.lower_bound).toFixed(1);
+                    const upper = Number(pt.upper_bound) || 0;
+                    const lower = Number(pt.lower_bound) || 0;
+                    const spread = (upper - lower).toFixed(1);
+                    const halfSpread = (Number(spread) / 2).toFixed(1);
                     return (
                       <tr key={pt.step} className="hover:bg-slate-800/30">
                         <td className="py-2 px-3 text-slate-500">+{pt.step}</td>
                         <td className="py-2 px-3 text-white font-medium">{pt.date}</td>
-                        <td className="py-2 px-3 text-right text-purple-300 font-bold">{pt.predicted.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right text-slate-400">{pt.lower_bound.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right text-slate-400">{pt.upper_bound.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right text-emerald-400/80 font-mono">±{(spread / 2).toFixed(1)}</td>
+                        <td className="py-2 px-3 text-right text-purple-300 font-bold">{Number(pt.predicted).toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">{lower.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">{upper.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right text-emerald-400/80 font-mono">±{halfSpread}</td>
                       </tr>
                     );
                   })}

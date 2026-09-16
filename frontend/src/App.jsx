@@ -8,6 +8,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ModelsPage from './pages/ModelsPage';
 import EvaluationPage from './pages/EvaluationPage';
 import ForecastPage from './pages/ForecastPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { TrendingUp, Settings, Info } from 'lucide-react';
 
@@ -58,60 +59,62 @@ export default function App() {
         />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-950/40">
-          {currentTab === 'dashboard' && (
-            <Dashboard 
-              backendStatus={backendStatus} 
-              currentDataset={currentDataset}
-              trainedModels={trainedModels}
-              onNavigateToDatasets={() => setCurrentTab('datasets')}
-              onNavigateToModels={() => setCurrentTab('models')}
-            />
-          )}
+          <ErrorBoundary onReset={() => setCurrentTab('dashboard')}>
+            {currentTab === 'dashboard' && (
+              <Dashboard 
+                backendStatus={backendStatus} 
+                currentDataset={currentDataset}
+                trainedModels={trainedModels}
+                onNavigateToDatasets={() => setCurrentTab('datasets')}
+                onNavigateToModels={() => setCurrentTab('models')}
+              />
+            )}
 
-          {currentTab === 'datasets' && (
-            <DatasetsPage 
-              currentDataset={currentDataset} 
-              setCurrentDataset={setCurrentDataset} 
-            />
-          )}
+            {currentTab === 'datasets' && (
+              <DatasetsPage 
+                currentDataset={currentDataset} 
+                setCurrentDataset={setCurrentDataset} 
+              />
+            )}
 
-          {currentTab === 'preprocessing' && (
-            <PreprocessingPage 
-              currentDataset={currentDataset} 
-              preprocessedData={preprocessedData}
-              setPreprocessedData={setPreprocessedData}
-              onNavigateToDatasets={() => setCurrentTab('datasets')}
-            />
-          )}
+            {currentTab === 'preprocessing' && (
+              <PreprocessingPage 
+                currentDataset={currentDataset} 
+                preprocessedData={preprocessedData}
+                setPreprocessedData={setPreprocessedData}
+                onNavigateToDatasets={() => setCurrentTab('datasets')}
+              />
+            )}
 
-          {currentTab === 'analytics' && (
-            <AnalyticsPage 
-              currentDataset={currentDataset}
-              onNavigateToDatasets={() => setCurrentTab('datasets')}
-            />
-          )}
+            {currentTab === 'analytics' && (
+              <AnalyticsPage 
+                currentDataset={currentDataset}
+                onNavigateToDatasets={() => setCurrentTab('datasets')}
+              />
+            )}
 
-          {currentTab === 'models' && (
-            <ModelsPage 
-              currentDataset={currentDataset}
-              trainedModels={trainedModels}
-              setTrainedModels={setTrainedModels}
-              onNavigateToDatasets={() => setCurrentTab('datasets')}
-            />
-          )}
+            {currentTab === 'models' && (
+              <ModelsPage 
+                currentDataset={currentDataset}
+                trainedModels={trainedModels}
+                setTrainedModels={setTrainedModels}
+                onNavigateToDatasets={() => setCurrentTab('datasets')}
+              />
+            )}
 
-          {currentTab === 'evaluation' && (
-            <EvaluationPage 
-              onNavigate={(tab) => setCurrentTab(tab)}
-            />
-          )}
+            {currentTab === 'evaluation' && (
+              <EvaluationPage 
+                onNavigate={(tab) => setCurrentTab(tab)}
+              />
+            )}
 
-          {currentTab === 'forecasts' && (
-            <ForecastPage 
-              onNavigate={(tab) => setCurrentTab(tab)}
-            />
-          )}
-          {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
+            {currentTab === 'forecasts' && (
+              <ForecastPage 
+                onNavigate={(tab) => setCurrentTab(tab)}
+              />
+            )}
+            {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

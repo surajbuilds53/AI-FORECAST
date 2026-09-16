@@ -3,7 +3,6 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Line,
-  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -11,7 +10,7 @@ import {
   Legend,
   ReferenceLine,
 } from 'recharts';
-import { Eye, EyeOff, Calendar, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -58,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between gap-4 text-[11px]">
               <span className="text-slate-400 font-sans">Prediction Interval:</span>
               <span className="text-emerald-400 font-bold">
-                [{item.lower.toFixed(1)} — {item.upper.toFixed(1)}]
+                [{Number(item.lower).toFixed(1)} — {Number(item.upper).toFixed(1)}]
               </span>
             </div>
           )}
@@ -88,24 +87,24 @@ export default function ForecastChart({
     );
   }
 
-  // Seamlessly stitch historical and forecast points
+  // Build unified continuous timeline
   const chartData = [];
 
-  // Add historical points
+  // 1. Historical points
   historicalPoints.forEach((hp, idx) => {
     const isLastHist = idx === historicalPoints.length - 1;
     chartData.push({
       date: hp.date,
       historical: hp.actual,
-      forecast: isLastHist ? hp.actual : null, // Bridge historical and forecast lines
-      lower: isLastHist ? hp.actual : null,
-      upper: isLastHist ? hp.actual : null,
+      forecast: isLastHist ? hp.actual : null,
+      lower: null,
+      upper: null,
       is_forecast: false,
       step: 0,
     });
   });
 
-  // Add forecast points
+  // 2. Forecast points
   forecastPoints.forEach((fp) => {
     chartData.push({
       date: fp.date,
@@ -118,18 +117,19 @@ export default function ForecastChart({
     });
   });
 
-  // Boundary split date for reference line
+  // Split date separating history from forecast
   const splitDate = historicalPoints.length > 0 ? historicalPoints[historicalPoints.length - 1].date : null;
 
-  // Dynamic Y-axis limits
+  // Safe Dynamic Y-axis limits
   const allValues = [
     ...historicalPoints.map((p) => p.actual),
     ...forecastPoints.map((p) => p.predicted),
     ...forecastPoints.map((p) => p.upper_bound),
-  ].filter((v) => !isNaN(v) && v !== null);
+    ...forecastPoints.map((p) => p.lower_bound),
+  ].filter((v) => typeof v === 'number' && !isNaN(v));
 
-  const minY = Math.floor(Math.min(...allValues) * 0.92);
-  const maxY = Math.ceil(Math.max(...allValues) * 1.08);
+  const minY = allValues.length > 0 ? Math.floor(Math.min(...allValues) * 0.92) : 0;
+  const maxY = allValues.length > 0 ? Math.ceil(Math.max(...allValues) * 1.08) : 100;
 
   return (
     <div className="space-y-4">
@@ -177,21 +177,15 @@ export default function ForecastChart({
             }`}
           >
             {showCI ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            Confidence Interval
+            Bounds ({Math.round(confidenceLevel * 100)}% CI)
           </button>
         </div>
       </div>
 
       {/* Recharts Canvas */}
-      <div className="h-88 w-full bg-slate-950/60 rounded-xl border border-slate-800/80 p-3 pt-6">
-        <ResponsiveContainer width="100%" height={340}>
+      <div className="h-80 w-full bg-slate-950/60 rounded-xl border border-slate-800/80 p-3 pt-6">
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 25, left: 10, bottom: 20 }}>
-            <defs>
-              <linearGradient id="ciGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.35} />
             <XAxis
               dataKey="date"
@@ -222,45 +216,12 @@ export default function ForecastChart({
               wrapperStyle={{ paddingBottom: '12px', fontSize: '11px' }}
             />
 
-            {/* Split marker */}
+            {/* Split Reference Line (safe string format) */}
             {splitDate && (
               <ReferenceLine
                 x={splitDate}
                 stroke="#f59e0b"
                 strokeDasharray="4 4"
-                label={{
-                  value: 'Forecast Origin',
-                  fill: '#f59e0b',
-                  fontSize: 10,
-                  position: 'top',
-                }}
-              />
-            )}
-
-            {/* Upper Confidence Band Area */}
-            {showCI && (
-              <Area
-                type="monotone"
-                dataKey="upper"
-                name={`Upper ${Math.round(confidenceLevel * 100)}% CI`}
-                stroke="#a855f7"
-                strokeWidth={1}
-                strokeDasharray="2 2"
-                fill="url(#ciGradient)"
-                dot={false}
-              />
-            )}
-
-            {/* Lower Confidence Bound Line */}
-            {showCI && (
-              <Line
-                type="monotone"
-                dataKey="lower"
-                name={`Lower ${Math.round(confidenceLevel * 100)}% CI`}
-                stroke="#a855f7"
-                strokeWidth={1}
-                strokeDasharray="2 2"
-                dot={false}
               />
             )}
 
@@ -283,7 +244,7 @@ export default function ForecastChart({
               <Line
                 type="monotone"
                 dataKey="forecast"
-                name={`Recursive Forecast (${modelName})`}
+                name={`Forecast (${modelName})`}
                 stroke="#a855f7"
                 strokeWidth={3}
                 strokeDasharray="5 5"
@@ -292,19 +253,50 @@ export default function ForecastChart({
                 connectNulls={true}
               />
             )}
+
+            {/* Upper Confidence Bound */}
+            {showCI && (
+              <Line
+                type="monotone"
+                dataKey="upper"
+                name={`Upper Bound (${Math.round(confidenceLevel * 100)}% CI)`}
+                stroke="#34d399"
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+                dot={false}
+                connectNulls={true}
+              />
+            )}
+
+            {/* Lower Confidence Bound */}
+            {showCI && (
+              <Line
+                type="monotone"
+                dataKey="lower"
+                name={`Lower Bound (${Math.round(confidenceLevel * 100)}% CI)`}
+                stroke="#f87171"
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+                dot={false}
+                connectNulls={true}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono px-2">
+      <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-mono px-2 gap-2">
         <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-0.5 bg-blue-500 inline-block" /> Solid Blue = Past Historical Observations
+          <span className="w-2.5 h-0.5 bg-blue-500 inline-block" /> Solid Blue = Historical Observations
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-0.5 bg-purple-500 border-b border-dashed border-purple-500 inline-block" /> Dashed Purple = Multi-Step Recursive Forecast
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2 bg-purple-500/20 border border-purple-500/40 rounded inline-block" /> Shaded Band = {Math.round(confidenceLevel * 100)}% Empirical Interval
+          <span className="w-2.5 h-0.5 bg-emerald-400 border-b border-dashed border-emerald-400 inline-block" /> Green = Upper Bound
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-0.5 bg-rose-400 border-b border-dashed border-rose-400 inline-block" /> Red = Lower Bound
         </span>
       </div>
     </div>
