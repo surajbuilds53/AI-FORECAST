@@ -3,12 +3,14 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import DatasetsPage from './pages/DatasetsPage';
+import PreprocessingPage from './pages/PreprocessingPage';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { Cpu, LineChart, Settings, Info } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [currentDataset, setCurrentDataset] = useState(null);
+  const [preprocessedData, setPreprocessedData] = useState(null);
   const { status: backendStatus, isChecking, refreshHealth } = useBackendHealth();
 
   // Placeholder view for tabs scheduled for future milestones
@@ -63,6 +65,15 @@ export default function App() {
             <DatasetsPage 
               currentDataset={currentDataset} 
               setCurrentDataset={setCurrentDataset} 
+            />
+          )}
+
+          {currentTab === 'preprocessing' && (
+            <PreprocessingPage 
+              currentDataset={currentDataset} 
+              preprocessedData={preprocessedData}
+              setPreprocessedData={setPreprocessedData}
+              onNavigateToDatasets={() => setCurrentTab('datasets')}
             />
           )}
 
