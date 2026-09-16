@@ -6,66 +6,49 @@ export default function StatusCard({
   subtitle,
   badgeText,
   badgeType = 'default',
-  icon: Icon,
-  accentColor = 'indigo'
+  icon: Icon
 }) {
   const getBadgeStyle = () => {
     switch (badgeType) {
       case 'success':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'warning':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'info':
-        return 'bg-sky-500/10 text-sky-400 border-sky-500/30';
-      case 'indigo':
-        return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       default:
-        return 'bg-slate-800 text-slate-400 border-slate-700';
-    }
-  };
-
-  const getAccentBorder = () => {
-    switch (accentColor) {
-      case 'emerald':
-        return 'hover:border-emerald-500/40 group-hover:text-emerald-400';
-      case 'sky':
-        return 'hover:border-sky-500/40 group-hover:text-sky-400';
-      case 'indigo':
-        return 'hover:border-indigo-500/40 group-hover:text-indigo-400';
-      default:
-        return 'hover:border-slate-600';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
   return (
-    <div className={`group relative bg-slate-900/90 border border-slate-800 rounded-xl p-5 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/5 ${getAccentBorder()}`}>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div className="bg-white border border-slate-200 rounded-lg p-4 transition-all hover:border-slate-300 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-slate-500">
           {title}
         </span>
         {Icon && (
-          <div className="p-2 rounded-lg bg-slate-800/80 text-slate-400 group-hover:text-white transition-colors duration-200">
+          <div className="p-1.5 rounded bg-slate-100 text-slate-500">
             <Icon className="w-4 h-4" />
           </div>
         )}
       </div>
 
-      <div className="space-y-1 mb-4">
-        <div className="text-2xl font-bold text-white tracking-tight">
+      <div className="space-y-0.5 mb-2">
+        <div className="text-xl font-bold text-slate-900 font-mono">
           {value}
         </div>
-        <p className="text-xs text-slate-400">
-          {subtitle}
-        </p>
+        {subtitle && (
+          <p className="text-xs text-slate-500">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       {badgeText && (
-        <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${getBadgeStyle()}`}>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${getBadgeStyle()}`}>
             {badgeText}
-          </span>
-          <span className="text-[11px] text-slate-500">
-            Milestone 1
           </span>
         </div>
       )}

@@ -1,245 +1,287 @@
-import React from 'react';
-import StatusCard from '../components/StatusCard';
-import { 
-  Database, 
-  Cpu, 
-  LineChart, 
-  Server, 
-  Layers, 
-  CheckCircle2, 
-  ArrowRight,
-  ShieldCheck,
-  Code2,
-  Activity,
-  FileCheck,
-  BrainCircuit
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Upload, FileText } from 'lucide-react';
+import { loadSampleDataset, uploadDataset, getDatasets } from '../api/dataset';
+import { getTrainedModels } from '../api/models';
 
-export default function Dashboard({ 
-  backendStatus, 
-  currentDataset, 
-  trainedModels = [], 
-  onNavigateToDatasets,
-  onNavigateToModels
+export default function Dashboard({
+  backendStatus = { healthy: false },
+  currentDataset,
+  setCurrentDataset,
+  trainedModels = [],
+  latestForecast,
+  onNavigate
 }) {
-  const latestModel = trainedModels[0];
+  const [modelCount, setModelCount] = useState(trainedModels.length);
+  const [loadingSample, setLoadingSample] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Sync real model count
+  useEffect(() => {
+    let isMounted = true;
+    getTrainedModels()
+      .then((models) => {
+        if (isMounted && Array.isArray(models)) {
+          setModelCount(models.length);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [trainedModels]);
+
+  const handleLoadSample = async () => {
+    setLoadingSample(true);
+    setError(null);
+    try {
+      const data = await loadSampleDataset();
+      if (setCurrentDataset) setCurrentDataset(data);
+      onNavigate('datasets');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load sample dataset.');
+    } finally {
+      setLoadingSample(false);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const data = await uploadDataset(file);
+      if (setCurrentDataset) setCurrentDataset(data);
+      onNavigate('datasets');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to upload CSV dataset.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const detectedDateCol = currentDataset?.detected_datetime_column || currentDataset?.columns?.find((c) =>
+    c.inferred_type === 'Datetime' || ['date', 'time', 'timestamp', 'day'].some((k) => c.name.toLowerCase().includes(k))
+  )?.name || '—';
+
+  const detectedTargetCol = currentDataset?.columns?.find((c) =>
+    c.inferred_type === 'Numeric' && c.name !== detectedDateCol
+  )?.name || '—';
+
+  const forecastText = latestForecast?.forecast_horizon
+    ? `+${latestForecast.forecast_horizon} days generated`
+    : 'Not generated';
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/20 p-6 md:p-8">
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Milestone 8 Complete: Platform Complete & Viva Defense Pack Ready</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-            AI Forecast — Intelligent AI/ML Forecasting Platform
+    <div className="space-y-8">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept=".csv"
+        className="hidden"
+      />
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            AI Forecast
           </h1>
-          <p className="text-sm md:text-base text-slate-300 leading-relaxed">
-            Full-stack machine learning forecasting suite for BTech 5th-semester viva defense and demonstration. Real out-of-sample recursive predictions (7, 14, 30 days), empirical prediction intervals, in-app Viva Hub, and downloadable CSV exports.
+          <p className="text-sm font-medium text-slate-600 mt-0.5">
+            Time-Series Forecasting & Analysis
+          </p>
+          <p className="text-sm text-slate-500 mt-2 max-w-2xl leading-relaxed">
+            Upload a dataset, prepare the time-series data, train forecasting models, evaluate their performance, and generate future predictions.
           </p>
         </div>
 
-        {/* Decorative background glow */}
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="self-start md:self-center shrink-0">
+          {backendStatus.healthy ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              API Connected
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-700 bg-rose-50 px-3 py-1.5 rounded-md border border-rose-200">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              API Disconnected
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Core Telemetry Cards */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* SECTION 1 — PROJECT STATUS */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Core Module Telemetry
-          </h2>
-          <span className="text-xs text-slate-500 font-mono">
-            4 Systems Monitored
-          </span>
-        </div>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Project Status
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="text-xs text-slate-500 font-medium">Dataset</div>
+            <div className="text-lg font-semibold text-slate-900 mt-1 truncate" title={currentDataset?.filename || 'None'}>
+              {currentDataset?.filename || 'None'}
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Dataset Status (Dynamic) */}
-          <StatusCard
-            title="Dataset Status"
-            value={currentDataset ? `${currentDataset.row_count} Rows` : "No Datasets"}
-            subtitle={currentDataset ? `${currentDataset.filename} (${currentDataset.column_count} cols)` : "Storage configured in /datasets"}
-            badgeText={currentDataset ? "Dataset Ready" : "Waiting for Upload"}
-            badgeType={currentDataset ? "success" : "warning"}
-            icon={currentDataset ? FileCheck : Database}
-            accentColor={currentDataset ? "emerald" : "indigo"}
-          />
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="text-xs text-slate-500 font-medium">Rows</div>
+            <div className="text-lg font-semibold text-slate-900 mt-1">
+              {currentDataset?.row_count ? currentDataset.row_count.toLocaleString() : '—'}
+            </div>
+          </div>
 
-          {/* Card 2: Model Status (Dynamic) */}
-          <StatusCard
-            title="Model Status"
-            value={trainedModels.length > 0 ? `${trainedModels.length} Model${trainedModels.length > 1 ? 's' : ''} Trained` : "Engine Idle"}
-            subtitle={latestModel ? `${latestModel.model_name} (${latestModel.training_time_ms}ms)` : "Scikit-learn pipeline ready"}
-            badgeText={trainedModels.length > 0 ? "Models Ready" : "Uninitialized"}
-            badgeType={trainedModels.length > 0 ? "success" : "default"}
-            icon={trainedModels.length > 0 ? BrainCircuit : Cpu}
-            accentColor={trainedModels.length > 0 ? "emerald" : "sky"}
-          />
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="text-xs text-slate-500 font-medium">Trained Models</div>
+            <div className="text-lg font-semibold text-slate-900 mt-1">
+              {modelCount}
+            </div>
+          </div>
 
-          {/* Card 3: Forecast Status */}
-          <StatusCard
-            title="Forecast Status"
-            value="Engine Active"
-            subtitle="Recursive 7, 14, 30-day projection"
-            badgeText="Operational"
-            badgeType="success"
-            icon={LineChart}
-            accentColor="purple"
-          />
-
-          {/* Card 4: System Status */}
-          <StatusCard
-            title="System Status"
-            value={backendStatus.healthy ? "Operational" : "Connecting"}
-            subtitle={backendStatus.healthy ? "FastAPI Backend v0.7.0" : "Verifying API health"}
-            badgeText={backendStatus.healthy ? "API Online" : "Checking"}
-            badgeType={backendStatus.healthy ? "success" : "warning"}
-            icon={Activity}
-            accentColor={backendStatus.healthy ? "emerald" : "amber"}
-          />
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="text-xs text-slate-500 font-medium">Forecast</div>
+            <div className="text-lg font-semibold text-slate-900 mt-1 truncate">
+              {forecastText}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Quick Action Banner */}
-      {!currentDataset ? (
-        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Database className="w-5 h-5 text-indigo-400 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-white">No Dataset Loaded</p>
-              <p className="text-xs text-slate-400">Upload a CSV dataset or load the 120-day daily sales sample to start training ML models.</p>
-            </div>
-          </div>
+      {/* SECTION 2 — GET STARTED */}
+      <div className="bg-white border border-slate-200 rounded-lg p-5">
+        <h2 className="text-base font-semibold text-slate-900">
+          Get Started
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Start with a dataset and follow the forecasting workflow.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 mt-4">
           <button
-            onClick={onNavigateToDatasets}
-            className="shrink-0 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-colors"
+            onClick={handleLoadSample}
+            disabled={loadingSample}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
           >
-            <span>Open Datasets Page</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            {loadingSample ? 'Loading Sample...' : 'Load Sample Dataset'}
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          >
+            {uploading ? 'Uploading...' : 'Upload CSV'}
           </button>
         </div>
-      ) : trainedModels.length === 0 ? (
-        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Cpu className="w-5 h-5 text-indigo-400 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-white">Dataset Ready — Train Your First Model</p>
-              <p className="text-xs text-slate-400">Train a Linear Regression baseline or Random Forest Regressor on chronological splits.</p>
-            </div>
-          </div>
-          <button
-            onClick={onNavigateToModels}
-            className="shrink-0 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-colors"
-          >
-            <span>Go to Models Page</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+      </div>
+
+      {/* SECTION 3 — WORKFLOW */}
+      <div>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Forecasting Workflow
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          {[
+            { num: '01', title: 'Dataset', text: 'Load or upload time-series data.', tab: 'datasets' },
+            { num: '02', title: 'Preprocess', text: 'Clean the data and create useful features.', tab: 'preprocessing' },
+            { num: '03', title: 'Train Model', text: 'Train a forecasting model on historical data.', tab: 'models' },
+            { num: '04', title: 'Evaluate', text: 'Compare predictions with known values.', tab: 'evaluation' },
+            { num: '05', title: 'Forecast', text: 'Generate predictions for future dates.', tab: 'forecasts' },
+          ].map((s) => (
+            <button
+              key={s.num}
+              onClick={() => onNavigate(s.tab)}
+              className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg p-4 text-left transition-colors group"
+            >
+              <div className="text-xs font-mono font-semibold text-slate-400 group-hover:text-blue-600">
+                {s.num}
+              </div>
+              <div className="text-sm font-semibold text-slate-900 mt-1">
+                {s.title}
+              </div>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                {s.text}
+              </p>
+            </button>
+          ))}
         </div>
-      ) : null}
+      </div>
 
-      {/* Architecture & Roadmap Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Full-Stack Communication Overview */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-600/10 rounded-lg text-indigo-400">
-              <Server className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Full-Stack Interconnect</h3>
-              <p className="text-xs text-slate-400">React frontend to FastAPI communication status</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${backendStatus.healthy ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-                <span className="text-xs font-medium text-slate-200">GET /health Endpoint</span>
+      {/* SECTION 4 — CURRENT DATASET */}
+      <div>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Current Dataset
+        </h2>
+        {currentDataset ? (
+          <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+              <div>
+                <span className="text-xs text-slate-500 block">Dataset Name</span>
+                <span className="font-medium text-slate-900 truncate block mt-0.5" title={currentDataset.filename}>
+                  {currentDataset.filename}
+                </span>
               </div>
-              <span className="text-xs font-mono text-slate-400">
-                {backendStatus.healthy ? '200 OK (Healthy)' : 'Connecting...'}
-              </span>
+              <div>
+                <span className="text-xs text-slate-500 block">Rows</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {currentDataset.row_count?.toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Columns</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {currentDataset.column_count}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Date Column</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {detectedDateCol}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 block">Target Column</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {detectedTargetCol}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-medium text-slate-200">POST /api/models/train (Scikit-learn)</span>
-              </div>
-              <span className="text-xs font-mono text-emerald-400">Operational</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
-              <div className="flex items-center gap-2.5">
-                <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-xs font-medium text-slate-200">API Documentation</span>
-              </div>
-              <a
-                href="http://127.0.0.1:8000/docs"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-mono text-indigo-400 hover:underline flex items-center gap-1"
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => onNavigate('datasets')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition-colors"
               >
-                /docs <ArrowRight className="w-3 h-3" />
-              </a>
+                <span>Open Dataset</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Roadmap & Next Steps */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-600/10 rounded-lg text-indigo-400">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Project Roadmap</h3>
-              <p className="text-xs text-slate-400">BTech 5th-Semester milestone progression</p>
-            </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-lg p-6 text-center space-y-3">
+            <p className="text-sm font-medium text-slate-800">
+              No dataset loaded
+            </p>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Upload a CSV file or load the sample dataset to begin.
+            </p>
+            <button
+              onClick={() => onNavigate('datasets')}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition-colors"
+            >
+              <span>Go to Datasets</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-
-          <div className="space-y-2.5 text-xs">
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-emerald-400 mt-0.5">M1-M4</span>
-              <div>
-                <p className="font-medium text-white">Foundation, Data Upload, Preprocessing & Visualization</p>
-                <p className="text-slate-400 text-[11px]">FastAPI, React Vite, Recharts time-series and feature engineering complete.</p>
-              </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
-            </div>
-
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-emerald-400 mt-0.5">M5-M6</span>
-              <div>
-                <p className="font-medium text-white">Model Training & Validation Benchmarking</p>
-                <p className="text-slate-400 text-[11px]">Linear Regression, Random Forest, chronological splits, MAE, MSE, RMSE, R².</p>
-              </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
-            </div>
-
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-emerald-400 mt-0.5">M7</span>
-              <div>
-                <p className="font-medium text-white">Future Forecasting Engine</p>
-                <p className="text-slate-400 text-[11px]">Recursive multi-step projections, prediction intervals, and CSV export.</p>
-              </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
-            </div>
-
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-              <span className="font-mono font-bold text-emerald-400 mt-0.5">M8</span>
-              <div>
-                <p className="font-medium text-white">Viva Defense & Presentation Pack</p>
-                <p className="text-slate-400 text-[11px]">In-app Viva Defense Hub, comprehensive documentation, and 5-min demo script.</p>
-              </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Ready</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

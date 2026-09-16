@@ -8,9 +8,8 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
-  Area,
 } from 'recharts';
-import { Eye, EyeOff, Activity, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Activity } from 'lucide-react';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -20,18 +19,18 @@ const CustomTooltip = ({ active, payload, label }) => {
       actualEntry && predEntry ? Number((actualEntry.value - predEntry.value).toFixed(2)) : null;
 
     return (
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 shadow-2xl text-xs space-y-2 font-mono">
-        <div className="text-slate-400 font-sans font-semibold border-b border-slate-800/80 pb-1.5 flex items-center justify-between gap-4">
-          <span>Date: {label}</span>
+      <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-md text-xs space-y-1.5 font-sans">
+        <div className="text-slate-500 font-medium border-b border-slate-100 pb-1 flex items-center justify-between gap-4">
+          <span>Date: <span className="font-mono text-slate-800">{label}</span></span>
           {residual !== null && (
             <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
                 Math.abs(residual) < 5
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border border-amber-200'
               }`}
             >
-              Residual: {residual > 0 ? `+${residual}` : residual}
+              Diff: {residual > 0 ? `+${residual}` : residual}
             </span>
           )}
         </div>
@@ -39,10 +38,10 @@ const CustomTooltip = ({ active, payload, label }) => {
           {payload.map((entry, index) => (
             <div key={`item-${index}`} className="flex items-center justify-between gap-6">
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-slate-300 font-sans">{entry.name}:</span>
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span className="text-slate-600">{entry.name}:</span>
               </span>
-              <span className="text-white font-bold">
+              <span className="font-mono font-semibold text-slate-900">
                 {entry.value !== null && entry.value !== undefined
                   ? Number(entry.value).toLocaleString()
                   : 'N/A'}
@@ -66,71 +65,70 @@ export default function ActualVsPredictedChart({
 
   if (!predictions || predictions.length === 0) {
     return (
-      <div className="h-80 flex flex-col items-center justify-center text-slate-500 text-xs font-mono border border-dashed border-slate-800 rounded-xl">
-        <Activity className="w-6 h-6 mb-2 text-slate-600 animate-pulse" />
-        No validation prediction points available.
+      <div className="h-72 flex flex-col items-center justify-center text-slate-400 text-xs font-mono border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+        <Activity className="w-5 h-5 mb-2 text-slate-400" />
+        No test set prediction data available.
       </div>
     );
   }
 
-  // Calculate min and max for Y-Axis padding
   const values = predictions.flatMap((p) => [p.actual, p.predicted]).filter((v) => !isNaN(v));
   const minY = Math.floor(Math.min(...values) * 0.95);
   const maxY = Math.ceil(Math.max(...values) * 1.05);
 
   return (
-    <div className="space-y-4">
-      {/* Chart Visibility Controls */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 font-medium">Evaluation Split:</span>
-          <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-mono text-[11px] border border-indigo-500/20">
-            {predictions.length} Validation Holdout Rows
+    <div className="space-y-3">
+      {/* Visibility Controls & Legend */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-3 text-slate-600 text-[11px]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 bg-blue-600 inline-block" />
+            <span>Solid Blue: Actual Values</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 bg-emerald-600 border-b border-dashed border-emerald-600 inline-block" />
+            <span>Dashed Green: Predicted Values</span>
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
+            type="button"
             onClick={() => setShowActual(!showActual)}
-            className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-colors ${
+            className={`px-2 py-1 rounded text-xs border flex items-center gap-1.5 transition-colors cursor-pointer ${
               showActual
-                ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
-                : 'bg-slate-900 text-slate-500 border-slate-800 line-through'
+                ? 'bg-blue-50 text-blue-700 border-blue-200 font-medium'
+                : 'bg-white text-slate-400 border-slate-200 line-through'
             }`}
           >
             {showActual ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            Actual ({targetName})
+            <span>Actual</span>
           </button>
           <button
+            type="button"
             onClick={() => setShowPredicted(!showPredicted)}
-            className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-colors ${
+            className={`px-2 py-1 rounded text-xs border flex items-center gap-1.5 transition-colors cursor-pointer ${
               showPredicted
-                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                : 'bg-slate-900 text-slate-500 border-slate-800 line-through'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium'
+                : 'bg-white text-slate-400 border-slate-200 line-through'
             }`}
           >
             {showPredicted ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            Predicted ({modelName})
+            <span>Predicted</span>
           </button>
         </div>
       </div>
 
       {/* Chart Canvas */}
-      <div className="h-80 w-full bg-slate-950/60 rounded-xl border border-slate-800/80 p-3 pt-6">
+      <div className="h-80 w-full bg-white rounded-lg border border-slate-200 p-3 pt-5">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={predictions} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
-            <defs>
-              <linearGradient id="actualGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis
               dataKey="date"
-              stroke="#64748b"
+              stroke="#94a3b8"
               fontSize={11}
               tickLine={false}
-              axisLine={{ stroke: '#334155' }}
+              axisLine={{ stroke: '#e2e8f0' }}
               tickFormatter={(val) => {
                 if (typeof val === 'string' && val.includes('-')) {
                   const parts = val.split('-');
@@ -141,31 +139,29 @@ export default function ActualVsPredictedChart({
             />
             <YAxis
               domain={[minY, maxY]}
-              stroke="#64748b"
+              stroke="#94a3b8"
               fontSize={11}
               tickLine={false}
-              axisLine={{ stroke: '#334155' }}
+              axisLine={{ stroke: '#e2e8f0' }}
               tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v)}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
               verticalAlign="top"
               align="right"
-              wrapperStyle={{ paddingBottom: '12px', fontSize: '11px' }}
+              wrapperStyle={{ paddingBottom: '8px', fontSize: '11px' }}
             />
 
             {/* Actual Curve */}
             {showActual && (
-              <Area
+              <Line
                 type="monotone"
                 dataKey="actual"
-                name={`Actual ${targetName}`}
-                stroke="#3b82f6"
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#actualGradient)"
-                dot={{ r: 3, fill: '#3b82f6', strokeWidth: 1, stroke: '#1e293b' }}
-                activeDot={{ r: 5, stroke: '#60a5fa', strokeWidth: 2 }}
+                name={`Actual (${targetName})`}
+                stroke="#2563eb"
+                strokeWidth={2}
+                dot={{ r: 2.5, fill: '#2563eb' }}
+                activeDot={{ r: 5 }}
               />
             )}
 
@@ -175,24 +171,15 @@ export default function ActualVsPredictedChart({
                 type="monotone"
                 dataKey="predicted"
                 name={`Predicted (${modelName})`}
-                stroke="#10b981"
-                strokeWidth={2.5}
+                stroke="#059669"
+                strokeWidth={2}
                 strokeDasharray="4 4"
-                dot={{ r: 3, fill: '#10b981', strokeWidth: 1, stroke: '#064e3b' }}
-                activeDot={{ r: 5, stroke: '#34d399', strokeWidth: 2 }}
+                dot={{ r: 2.5, fill: '#059669' }}
+                activeDot={{ r: 5 }}
               />
             )}
           </ComposedChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono px-2">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-0.5 bg-blue-500 inline-block" /> Solid Blue = Actual Ground Truth
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-0.5 bg-emerald-500 border-b border-dashed border-emerald-500 inline-block" /> Dashed Emerald = Out-of-Sample Predictions
-        </span>
       </div>
     </div>
   );

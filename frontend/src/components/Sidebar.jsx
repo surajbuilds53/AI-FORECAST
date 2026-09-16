@@ -1,51 +1,89 @@
-import { 
-  BarChart3, 
-  Database, 
-  Sliders,
-  LineChart as ChartIcon,
-  Cpu, 
-  TrendingUp, 
-  GraduationCap, 
-  Activity, 
-  Sparkles,
-  Scale
+import React from 'react';
+import {
+  LayoutDashboard,
+  Database,
+  SlidersHorizontal,
+  LineChart,
+  Cpu,
+  Scale,
+  TrendingUp,
+  GraduationCap,
+  X
 } from 'lucide-react';
 
-export default function Sidebar({ currentTab, setCurrentTab }) {
+export default function Sidebar({
+  currentTab,
+  setCurrentTab,
+  backendStatus = { healthy: false },
+  isChecking = false,
+  isOpen = false,
+  onClose = () => {}
+}) {
   const navigationItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, badge: null },
-    { id: 'datasets', name: 'Datasets', icon: Database, badge: 'Ready' },
-    { id: 'preprocessing', name: 'Preprocessing', icon: Sliders, badge: 'Ready' },
-    { id: 'analytics', name: 'Analytics', icon: ChartIcon, badge: 'Ready' },
-    { id: 'models', name: 'Models', icon: Cpu, badge: 'Ready' },
-    { id: 'evaluation', name: 'Evaluation', icon: Scale, badge: 'Ready' },
-    { id: 'forecasts', name: 'Forecasts', icon: TrendingUp, badge: 'Ready' },
-    { id: 'viva', name: 'Viva & Docs', icon: GraduationCap, badge: 'Ready' },
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+    { id: 'datasets', name: 'Datasets', icon: Database },
+    { id: 'preprocessing', name: 'Preprocessing', icon: SlidersHorizontal },
+    { id: 'analytics', name: 'Analytics', icon: LineChart },
+    { id: 'models', name: 'Models', icon: Cpu },
+    { id: 'evaluation', name: 'Evaluation', icon: Scale },
+    { id: 'forecasts', name: 'Forecasts', icon: TrendingUp },
+    { id: 'viva', name: 'Viva & Docs', icon: GraduationCap },
   ];
 
-  return (
-    <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col h-screen select-none shrink-0">
+  const handleSelect = (id) => {
+    setCurrentTab(id);
+    onClose();
+  };
+
+  const renderStatus = () => {
+    if (isChecking) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          Checking...
+        </span>
+      );
+    }
+    if (backendStatus.healthy) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          Connected
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-700">
+        <span className="w-2 h-2 rounded-full bg-rose-500" />
+        Disconnected
+      </span>
+    );
+  };
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-white border-r border-slate-200 select-none">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800/80 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <Sparkles className="w-5 h-5 text-white" />
-        </div>
+      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200">
         <div>
-          <h1 className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
+          <h1 className="font-semibold text-base text-slate-900 tracking-tight">
             AI Forecast
           </h1>
-          <p className="text-[11px] text-indigo-400 font-medium tracking-wide uppercase">
-            Intelligence Suite
+          <p className="text-xs text-slate-500 font-normal">
+            Time-Series Forecasting
           </p>
         </div>
+        {/* Mobile close button */}
+        <button
+          onClick={onClose}
+          className="md:hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-md"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-        <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          Platform Overview
-        </div>
-
+      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -53,41 +91,54 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
           return (
             <button
               key={item.id}
-              onClick={() => setCurrentTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+              onClick={() => handleSelect(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-left ${
                 isActive
-                  ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
-                <span>{item.name}</span>
-              </div>
-              {item.badge && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-normal border ${
-                  item.badge === 'Ready' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                    : 'bg-slate-800 text-slate-400 border-slate-700/50'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
+              <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-700' : 'text-slate-400'}`} />
+              <span>{item.name}</span>
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* System Status / Footer */}
-      <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
-        <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
-          <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>Milestone 8 Complete</span>
+      {/* Bottom API Status (Real State) */}
+      <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+        <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+          API Status
         </div>
-        <div className="text-[11px] text-slate-500 font-mono">
-          v1.0.0 • Production Ready
-        </div>
+        <div>{renderStatus()}</div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:block w-60 shrink-0 h-screen sticky top-0">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-slate-900/30 z-40 md:hidden transition-opacity"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <div
+        className={`fixed inset-y-0 left-0 w-64 z-50 transform transition-transform duration-200 ease-in-out md:hidden ${
+          isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'
+        }`}
+      >
+        {sidebarContent}
+      </div>
+    </>
   );
 }

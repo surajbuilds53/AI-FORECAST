@@ -1,28 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Sliders, 
-  Calendar, 
-  Hash, 
-  Sparkles, 
-  RefreshCw, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Table, 
-  Layers, 
-  Clock, 
-  TrendingUp, 
-  Info,
-  ArrowRight,
-  Database,
-  ListChecks
-} from 'lucide-react';
+import { AlertCircle, ArrowRight } from 'lucide-react';
 import { getRecommendations, runPreprocessing } from '../api/preprocessing';
 
-export default function PreprocessingPage({ 
-  currentDataset, 
-  preprocessedData, 
+export default function PreprocessingPage({
+  currentDataset,
+  preprocessedData,
   setPreprocessedData,
-  onNavigateToDatasets
+  onNavigate
 }) {
   const [recommendations, setRecommendations] = useState(null);
   const [selectedDateCol, setSelectedDateCol] = useState('');
@@ -33,66 +17,66 @@ export default function PreprocessingPage({
   const [includeRolling, setIncludeRolling] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingRecs, setIsFetchingRecs] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
-  // Load column recommendations whenever the active dataset changes
+  // Fetch column recommendations when currentDataset changes
   useEffect(() => {
-    if (!currentDataset?.id) return;
+    if (!currentDataset?.id && !currentDataset?.filename) return;
+    const targetId = currentDataset.id || currentDataset.filename;
 
     const fetchRecs = async () => {
-      setIsFetchingRecs(true);
-      setErrorMessage('');
       try {
-        const recs = await getRecommendations(currentDataset.id);
+        const recs = await getRecommendations(targetId);
         setRecommendations(recs);
         if (recs.recommended_datetime_column) {
           setSelectedDateCol(recs.recommended_datetime_column);
-        } else if (recs.all_columns.length > 0) {
+        } else if (recs.all_columns?.length > 0) {
           setSelectedDateCol(recs.all_columns[0]);
         }
 
         if (recs.recommended_target_column) {
           setSelectedTargetCol(recs.recommended_target_column);
-        } else if (recs.all_numeric_columns.length > 0) {
+        } else if (recs.all_numeric_columns?.length > 0) {
           setSelectedTargetCol(recs.all_numeric_columns[0]);
         }
       } catch (err) {
-        setErrorMessage(err.response?.data?.detail || 'Failed to load column recommendations');
-      } finally {
-        setIsFetchingRecs(false);
+        // Fallback to columns from currentDataset
+        if (currentDataset.columns) {
+          const dateC = currentDataset.columns.find((c) =>
+            c.inferred_type === 'Datetime' || c.name.toLowerCase().includes('date')
+          )?.name || currentDataset.columns[0]?.name;
+          const targetC = currentDataset.columns.find((c) =>
+            c.inferred_type === 'Numeric' && c.name !== dateC
+          )?.name;
+          if (dateC) setSelectedDateCol(dateC);
+          if (targetC) setSelectedTargetCol(targetC);
+        }
       }
     };
 
     fetchRecs();
   }, [currentDataset]);
 
-  const handleExecute = async () => {
-    if (!currentDataset?.id) {
-      setErrorMessage('Please upload or select a dataset first.');
+  const handleRunPreprocessing = async () => {
+    if (!currentDataset) {
+      setErrorMessage('Select a dataset and configure the date and target columns first.');
       return;
     }
-    if (!selectedDateCol) {
-      setErrorMessage('Please select a datetime column.');
-      return;
-    }
-    if (!selectedTargetCol) {
-      setErrorMessage('Please select a numeric target variable.');
+    if (!selectedDateCol || !selectedTargetCol) {
+      setErrorMessage('Please select both a date column and a numeric target column.');
       return;
     }
     if (selectedDateCol === selectedTargetCol) {
-      setErrorMessage('The date column and target variable cannot be the same.');
+      setErrorMessage('Date column and target column cannot be identical.');
       return;
     }
 
     setIsLoading(true);
     setErrorMessage('');
-    setSuccessMessage('');
 
     try {
       const response = await runPreprocessing({
-        dataset_id: currentDataset.id,
+        dataset_id: currentDataset.id || currentDataset.filename,
         datetime_column: selectedDateCol,
         target_column: selectedTargetCol,
         missing_value_strategy: missingStrategy,
@@ -101,388 +85,255 @@ export default function PreprocessingPage({
         include_rolling_mean: includeRolling,
       });
       setPreprocessedData(response);
-      setSuccessMessage(
-        `Preprocessing completed! Engineered ${response.features_created.length} new predictive features.`
-      );
     } catch (err) {
-      setErrorMessage(err.response?.data?.detail || err.message || 'Preprocessing execution failed');
+      const detail = err.response?.data?.detail || err.message || 'Preprocessing failed.';
+      setErrorMessage(detail);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!currentDataset) {
-    return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center">
-          <Database className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-white">No Dataset Active</h2>
-        <p className="text-sm text-slate-400 max-w-md mx-auto">
-          Please upload a CSV dataset or load the demo sample on the Datasets page before running the preprocessing pipeline.
-        </p>
-        <button
-          onClick={onNavigateToDatasets}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
-        >
-          Go to Datasets Page
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
-      {/* Header */}
-      <div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mb-2">
-          <Sliders className="w-3.5 h-3.5" />
-          <span>Milestone 3 Active</span>
-        </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">
-          Time-Series Data Preprocessing & Feature Engineering
+    <div className="space-y-8">
+      {/* HEADER */}
+      <div className="border-b border-slate-200 pb-6">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          Preprocessing
         </h1>
-        <p className="text-sm text-slate-400">
-          Enforce chronological ordering, handle missing entries safely, and engineer lag & rolling features for ML training.
+        <p className="text-sm text-slate-500 mt-1">
+          Clean the dataset and create features for forecasting.
         </p>
       </div>
 
-      {/* Alerts */}
+      {/* ERROR STATE */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-sm">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-          <div className="flex-1 font-medium">{errorMessage}</div>
-          <button onClick={() => setErrorMessage('')} className="text-rose-400 hover:text-white text-xs font-bold">Dismiss</button>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3 text-emerald-300 text-sm">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-          <div className="flex-1 font-medium">{successMessage}</div>
-          <button onClick={() => setSuccessMessage('')} className="text-emerald-400 hover:text-white text-xs font-bold">Dismiss</button>
-        </div>
-      )}
-
-      {/* Configuration Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Step 1 & 2: Column Selection */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 space-y-5">
-          <div className="flex items-center gap-2.5 text-sm font-semibold text-white">
-            <span className="w-6 h-6 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-mono">1</span>
-            <span>Target & Datetime Variables</span>
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-semibold block">Preprocessing failed.</span>
+            <span className="text-xs text-red-600 mt-0.5 block">{errorMessage}</span>
           </div>
-
-          {/* Datetime Column */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                Datetime Column
-              </span>
-              <span className="text-[10px] text-slate-500">For chronological sort</span>
-            </label>
-            <select
-              value={selectedDateCol}
-              onChange={(e) => setSelectedDateCol(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-            >
-              {recommendations?.all_columns.map((col) => (
-                <option key={col} value={col}>
-                  {col} {recommendations.all_datetime_columns.includes(col) ? '📅 (Inferred Date)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Target Column */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5 text-emerald-400" />
-                Target Variable (Y)
-              </span>
-              <span className="text-[10px] text-slate-500">To be predicted</span>
-            </label>
-            <select
-              value={selectedTargetCol}
-              onChange={(e) => setSelectedTargetCol(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-            >
-              {recommendations?.all_numeric_columns.map((col) => (
-                <option key={col} value={col}>
-                  {col} {col === recommendations.recommended_target_column ? '⭐ (Recommended)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
-            💡 The engine will strictly sort rows by <span className="font-mono text-amber-300">{selectedDateCol || 'date'}</span> ascending to prevent look-ahead bias during training.
-          </div>
-        </div>
-
-        {/* Step 3: Imputation Strategy */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 space-y-5">
-          <div className="flex items-center gap-2.5 text-sm font-semibold text-white">
-            <span className="w-6 h-6 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-mono">2</span>
-            <span>Missing Value Treatment</span>
-          </div>
-
-          <div className="space-y-2.5">
-            {[
-              { id: 'forward_fill', label: 'Forward Fill (Last Known Value)', desc: 'Carries previous valid observation forward in time (standard for time series).' },
-              { id: 'backward_fill', label: 'Backward Fill (Next Valid Value)', desc: 'Propagates future observation backwards to fill nulls.' },
-              { id: 'mean', label: 'Mean Imputation', desc: 'Replaces missing values with the column average.' },
-              { id: 'median', label: 'Median Imputation', desc: 'Robust against extreme outliers in numeric data.' },
-              { id: 'drop', label: 'Drop Missing Rows', desc: 'Discards any row containing missing target values.' },
-            ].map((strat) => (
-              <label
-                key={strat.id}
-                className={`flex items-start gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                  missingStrategy === strat.id
-                    ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
-                    : 'bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="missing_strategy"
-                  value={strat.id}
-                  checked={missingStrategy === strat.id}
-                  onChange={(e) => setMissingStrategy(e.target.value)}
-                  className="mt-1 text-indigo-600 focus:ring-0"
-                />
-                <div>
-                  <div className="text-xs font-medium text-slate-200">{strat.label}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{strat.desc}</div>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Step 4: Feature Engineering Options */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 space-y-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-white mb-4">
-              <span className="w-6 h-6 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-mono">3</span>
-              <span>Automated Feature Engineering</span>
-            </div>
-
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800/80 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeCalendar}
-                  onChange={(e) => setIncludeCalendar(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-0"
-                />
-                <div>
-                  <div className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                    Calendar Temporal Features
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Generates year, month, day, day of week, quarter, and weekend flag.
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800/80 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeLags}
-                  onChange={(e) => setIncludeLags(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-0"
-                />
-                <div>
-                  <div className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                    Autoregressive Lag Features
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Generates <span className="font-mono">target_lag_1</span> (yesterday) and <span className="font-mono">target_lag_7</span> (weekly cycle).
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800/80 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeRolling}
-                  onChange={(e) => setIncludeRolling(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-0"
-                />
-                <div>
-                  <div className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
-                    <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
-                    Rolling Window Statistics
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Generates <span className="font-mono">target_rolling_mean_7</span> (7-period smoothed trend).
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
           <button
-            onClick={handleExecute}
-            disabled={isLoading || isFetchingRecs}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            onClick={() => setErrorMessage('')}
+            className="text-xs font-semibold text-red-700 hover:text-red-900"
           >
-            {isLoading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Executing Chronological Pipeline...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-indigo-200" />
-                <span>Run Preprocessing Pipeline</span>
-              </>
-            )}
+            Dismiss
           </button>
         </div>
+      )}
+
+      {/* SECTION 1 — INPUT DATA */}
+      <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
+        <h2 className="text-base font-semibold text-slate-900">
+          Input Data
+        </h2>
+
+        {currentDataset ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm pt-1">
+            <div>
+              <span className="text-xs text-slate-500 block">Dataset</span>
+              <span className="font-medium text-slate-900 truncate block mt-0.5" title={currentDataset.filename}>
+                {currentDataset.filename}
+              </span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500 block">Rows</span>
+              <span className="font-medium text-slate-900 block mt-0.5">
+                {currentDataset.row_count?.toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500 block">Date Column</span>
+              <select
+                value={selectedDateCol}
+                onChange={(e) => setSelectedDateCol(e.target.value)}
+                className="mt-0.5 w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              >
+                {currentDataset.columns?.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500 block">Target Column</span>
+              <select
+                value={selectedTargetCol}
+                onChange={(e) => setSelectedTargetCol(e.target.value)}
+                className="mt-0.5 w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              >
+                {currentDataset.columns?.filter((c) => c.name !== selectedDateCol).map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-500 py-2">
+            Select a dataset and configure the date and target columns first.{' '}
+            <button
+              onClick={() => onNavigate('datasets')}
+              className="text-blue-600 hover:underline font-medium ml-1"
+            >
+              Go to Datasets
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Preprocessed Results & Explainable Audit Log */}
+      {/* SECTION 2 — DATA CLEANING */}
+      <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
+        <h2 className="text-base font-semibold text-slate-900">
+          Missing Values
+        </h2>
+
+        <div className="max-w-md space-y-1.5">
+          <label className="text-xs font-medium text-slate-700 block">
+            Handling Strategy
+          </label>
+          <select
+            value={missingStrategy}
+            onChange={(e) => setMissingStrategy(e.target.value)}
+            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          >
+            <option value="forward_fill">Forward fill (Propagate past values)</option>
+            <option value="backward_fill">Backward fill (Propagate next values)</option>
+            <option value="mean">Mean imputation</option>
+            <option value="median">Median imputation</option>
+            <option value="drop">Drop rows with missing target</option>
+          </select>
+          <p className="text-xs text-slate-500 pt-0.5">
+            Choose how missing observations should be handled before training.
+          </p>
+        </div>
+      </div>
+
+      {/* SECTION 3 — FEATURE ENGINEERING */}
+      <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <h2 className="text-base font-semibold text-slate-900">
+          Features
+        </h2>
+
+        <div className="space-y-3">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeCalendar}
+              onChange={(e) => setIncludeCalendar(e.target.checked)}
+              className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-slate-900 block">Calendar Features</span>
+              <span className="text-xs text-slate-500 block">
+                Extract information such as day, month and weekday from the date.
+              </span>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeLags}
+              onChange={(e) => setIncludeLags(e.target.checked)}
+              className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-slate-900 block">Lag Features</span>
+              <span className="text-xs text-slate-500 block">
+                Use previous observations as model inputs.
+              </span>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeRolling}
+              onChange={(e) => setIncludeRolling(e.target.checked)}
+              className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-slate-900 block">Rolling Features</span>
+              <span className="text-xs text-slate-500 block">
+                Calculate statistics over previous observations.
+              </span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* SECTION 4 — PREPROCESS BUTTON */}
+      <div>
+        <button
+          onClick={handleRunPreprocessing}
+          disabled={isLoading || !currentDataset}
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+        >
+          {isLoading ? 'Processing...' : 'Run Preprocessing'}
+        </button>
+      </div>
+
+      {/* SECTION 5 — RESULT */}
       {preprocessedData && (
-        <div className="space-y-6">
-          {/* Summary Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Observations</span>
-              <div className="text-2xl font-bold text-white mt-1 font-mono">{preprocessedData.processed_rows.toLocaleString()}</div>
-              <p className="text-[11px] text-emerald-400 mt-0.5">Chronologically ordered</p>
-            </div>
+        <div className="space-y-6 pt-4 border-t border-slate-200">
+          <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+            <h2 className="text-base font-semibold text-slate-900">
+              Preprocessing Result
+            </h2>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Features Available</span>
-              <div className="text-2xl font-bold text-white mt-1 font-mono">{preprocessedData.processed_columns}</div>
-              <p className="text-[11px] text-indigo-400 mt-0.5">+{preprocessedData.features_created.length} engineered</p>
-            </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Variable</span>
-              <div className="text-2xl font-bold text-white mt-1 font-mono truncate">{preprocessedData.target_column}</div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Mean: {preprocessedData.summary_stats.mean}</p>
-            </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Range</span>
-              <div className="text-2xl font-bold text-white mt-1 font-mono">
-                {preprocessedData.summary_stats.min} – {preprocessedData.summary_stats.max}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-xs text-slate-500 block">Rows Before</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {preprocessedData.original_rows?.toLocaleString()}
+                </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Std Dev: {preprocessedData.summary_stats.std}</p>
+              <div>
+                <span className="text-xs text-slate-500 block">Rows After</span>
+                <span className="font-medium text-slate-900 block mt-0.5">
+                  {preprocessedData.cleaned_rows?.toLocaleString()}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-xs text-slate-500 block">Features Created</span>
+                <span className="font-medium text-slate-900 block mt-0.5 text-xs font-mono break-words">
+                  {preprocessedData.created_features?.length > 0
+                    ? preprocessedData.created_features.join(', ')
+                    : 'None'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Explainable Step-by-Step Audit Log (Viva Demonstration Core Feature) */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/20">
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <ListChecks className="w-4 h-4 text-emerald-400" />
-                  Explainable Transformation Audit Log
-                </h3>
-                <p className="text-xs text-slate-400">Exact sequence of mathematical and temporal operations performed</p>
-              </div>
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
-                {preprocessedData.steps_log.length} Steps Verified
+          {/* Processed Data Preview */}
+          <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Processed Data Preview
+              </h3>
+              <span className="text-xs text-slate-500 font-mono">
+                Showing first {preprocessedData.preview_rows?.length || 0} rows
               </span>
             </div>
 
-            <div className="p-5 space-y-3">
-              {preprocessedData.steps_log.map((step) => (
-                <div 
-                  key={step.step_number} 
-                  className="flex items-start gap-4 p-3.5 rounded-lg bg-slate-950/60 border border-slate-800/80"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">
-                    {step.step_number}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-semibold text-white">{step.step_name}</h4>
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
-                        <CheckCircle2 className="w-3 h-3" /> {step.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 mt-0.5">{step.description}</p>
-                    <p className="text-[11px] text-slate-500 font-mono mt-1">{step.details}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Transformed Data Preview Table */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-xl shadow-black/20">
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Table className="w-4 h-4 text-indigo-400" />
-                  Preprocessed Feature Matrix Preview (First 10 Rows)
-                </h3>
-                <p className="text-xs text-slate-400">Engineered calendar, lag, and rolling features appended to feature space</p>
-              </div>
-              <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
-                Saved: {preprocessedData.preprocessed_dataset_id}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-left text-xs border-collapse font-mono">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0 z-10">
+            <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-80">
+              <table className="w-full text-left border-collapse text-xs font-mono">
+                <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-700 font-medium font-sans">
                   <tr>
-                    <th className="px-4 py-3 text-slate-500 w-12 text-center">#</th>
-                    {Object.keys(preprocessedData.preview_rows[0] || {}).map((col) => {
-                      const isEngineered = preprocessedData.features_created.includes(col);
-                      const isTarget = col === preprocessedData.target_column;
-                      const isDate = col === preprocessedData.datetime_column;
-
-                      return (
-                        <th 
-                          key={col} 
-                          className={`px-4 py-3 whitespace-nowrap ${
-                            isEngineered 
-                              ? 'text-indigo-300 bg-indigo-950/20' 
-                              : isTarget 
-                                ? 'text-emerald-400 bg-emerald-950/20' 
-                                : isDate 
-                                  ? 'text-amber-300 bg-amber-950/20' 
-                                  : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>{col}</span>
-                            {isEngineered && <span className="text-[9px] px-1 rounded bg-indigo-600/30 text-indigo-300 font-sans">feat</span>}
-                            {isTarget && <span className="text-[9px] px-1 rounded bg-emerald-600/30 text-emerald-300 font-sans">target</span>}
-                          </div>
-                        </th>
-                      );
-                    })}
+                    {preprocessedData.columns?.map((col) => (
+                      <th key={col} className="py-2.5 px-3 whitespace-nowrap">
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {preprocessedData.preview_rows.map((row, rIdx) => (
-                    <tr key={rIdx} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="px-4 py-2.5 text-slate-500 text-center text-[11px] bg-slate-950/40">{rIdx + 1}</td>
-                      {Object.keys(preprocessedData.preview_rows[0] || {}).map((col) => {
-                        const isEngineered = preprocessedData.features_created.includes(col);
-                        return (
-                          <td 
-                            key={col} 
-                            className={`px-4 py-2.5 whitespace-nowrap ${
-                              isEngineered ? 'bg-indigo-950/10 text-indigo-200' : ''
-                            }`}
-                          >
-                            {row[col] !== null && row[col] !== undefined ? String(row[col]) : 'NaN'}
-                          </td>
-                        );
-                      })}
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {preprocessedData.preview_rows?.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      {preprocessedData.columns?.map((col) => (
+                        <td key={col} className="py-2 px-3 whitespace-nowrap">
+                          {row[col] !== null && row[col] !== undefined ? String(row[col]) : '—'}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
