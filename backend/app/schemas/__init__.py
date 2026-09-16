@@ -17,6 +17,13 @@ from app.schemas.model import (
     ModelTrainingResult,
     AvailableModelInfo,
 )
+from app.schemas.evaluation import (
+    EvaluationMetrics,
+    ValidationPredictionPoint,
+    ModelEvaluationResponse,
+    ModelComparisonItem,
+    ModelComparisonResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -34,4 +41,9 @@ __all__ = [
     "TrainingRequest",
     "ModelTrainingResult",
     "AvailableModelInfo",
+    "EvaluationMetrics",
+    "ValidationPredictionPoint",
+    "ModelEvaluationResponse",
+    "ModelComparisonItem",
+    "ModelComparisonResponse",
 ]

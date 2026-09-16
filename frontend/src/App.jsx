@@ -6,6 +6,7 @@ import DatasetsPage from './pages/DatasetsPage';
 import PreprocessingPage from './pages/PreprocessingPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ModelsPage from './pages/ModelsPage';
+import EvaluationPage from './pages/EvaluationPage';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { TrendingUp, Settings, Info } from 'lucide-react';
 
@@ -95,6 +96,12 @@ export default function App() {
               trainedModels={trainedModels}
               setTrainedModels={setTrainedModels}
               onNavigateToDatasets={() => setCurrentTab('datasets')}
+            />
+          )}
+
+          {currentTab === 'evaluation' && (
+            <EvaluationPage 
+              onNavigate={(tab) => setCurrentTab(tab)}
             />
           )}
 
