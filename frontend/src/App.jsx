@@ -8,6 +8,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ModelsPage from './pages/ModelsPage';
 import EvaluationPage from './pages/EvaluationPage';
 import ForecastPage from './pages/ForecastPage';
+import VivaGuidePage from './pages/VivaGuidePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { TrendingUp, Settings, Info } from 'lucide-react';
@@ -113,7 +114,12 @@ export default function App() {
                 onNavigate={(tab) => setCurrentTab(tab)}
               />
             )}
-            {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
+
+            {currentTab === 'viva' && (
+              <VivaGuidePage 
+                onNavigate={(tab) => setCurrentTab(tab)}
+              />
+            )}
           </ErrorBoundary>
         </main>
       </div>

@@ -5,7 +5,7 @@ import {
   LineChart as ChartIcon,
   Cpu, 
   TrendingUp, 
-  Settings, 
+  GraduationCap, 
   Activity, 
   Sparkles,
   Scale
@@ -20,7 +20,7 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
     { id: 'models', name: 'Models', icon: Cpu, badge: 'Ready' },
     { id: 'evaluation', name: 'Evaluation', icon: Scale, badge: 'Ready' },
     { id: 'forecasts', name: 'Forecasts', icon: TrendingUp, badge: 'Ready' },
-    { id: 'settings', name: 'Settings', icon: Settings, badge: null },
+    { id: 'viva', name: 'Viva & Docs', icon: GraduationCap, badge: 'Ready' },
   ];
 
   return (
@@ -81,11 +81,11 @@ export default function Sidebar({ currentTab, setCurrentTab }) {
       {/* System Status / Footer */}
       <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
         <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
-          <Activity className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-          <span>Milestone 7 Active</span>
+          <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+          <span>Milestone 8 Complete</span>
         </div>
         <div className="text-[11px] text-slate-500 font-mono">
-          v0.7.0 • Future Forecasting Engine
+          v1.0.0 • Production Ready
         </div>
       </div>
     </aside>
