@@ -1,52 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
+import { useBackendHealth } from './hooks/useBackendHealth';
 import { Database, Cpu, LineChart, Settings, Info } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
-  const [backendStatus, setBackendStatus] = useState({
-    healthy: false,
-    service: '',
-    version: '',
-    error: null,
-  });
-  const [isChecking, setIsChecking] = useState(false);
-
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-
-  // Function to query the FastAPI /health endpoint
-  const checkBackendHealth = async () => {
-    setIsChecking(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`);
-      if (!response.ok) {
-        throw new Error(`Server returned status: ${response.status}`);
-      }
-      const data = await response.json();
-      setBackendStatus({
-        healthy: data.status === 'healthy',
-        service: data.service || 'FastAPI',
-        version: data.version || '0.1.0',
-        error: null,
-      });
-    } catch (err) {
-      setBackendStatus({
-        healthy: false,
-        service: '',
-        version: '',
-        error: err.message,
-      });
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  // Check health on initial component mount
-  useEffect(() => {
-    checkBackendHealth();
-  }, []);
+  const { status: backendStatus, isChecking, refreshHealth } = useBackendHealth();
 
   // Placeholder view for tabs scheduled for future milestones
   const renderTabPlaceholder = (title, icon, milestone, description) => {
@@ -83,16 +44,16 @@ export default function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header 
           backendStatus={backendStatus} 
-          checkBackendHealth={checkBackendHealth}
+          checkBackendHealth={refreshHealth}
           isChecking={isChecking}
         />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-950/40">
           {currentTab === 'dashboard' && <Dashboard backendStatus={backendStatus} />}
-          {currentTab === 'datasets' && renderTabPlaceholder('Datasets Management', Database, 'Milestone 2', 'Upload CSV/Excel data files, inspect automated time-series columns, and generate exploratory summary statistics.')}
-          {currentTab === 'models' && renderTabPlaceholder('Machine Learning Models', Cpu, 'Milestone 3', 'Train and configure time-series forecasting algorithms (ARIMA, Prophet, XGBoost, LSTM).')}
-          {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', LineChart, 'Milestone 4', 'Generate future predictions, visualize confidence intervals, and evaluate forecast accuracy metrics.')}
-          {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Environment settings, API endpoints, and telemetry preferences.')}
+          {currentTab === 'datasets' && renderTabPlaceholder('Datasets Management', Database, 'Milestone 2', 'Upload CSV files, validate schema, inspect row/column count, and review exploratory column profiling.')}
+          {currentTab === 'models' && renderTabPlaceholder('Machine Learning Models', Cpu, 'Milestone 5 & 6', 'Train Linear Regression and Random Forest Regressors, chronologically split validation, and compare MAE/RMSE/R² metrics.')}
+          {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', LineChart, 'Milestone 7', 'Generate future predictions for 7, 14, or 30 days, view historical vs predicted charts, and export results.')}
+          {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
         </main>
       </div>
     </div>
