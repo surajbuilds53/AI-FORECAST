@@ -29,20 +29,20 @@ export default function Dashboard({
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/20 p-6 md:p-8">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Milestone 6 Complete: Model Evaluation & Validation Benchmarking Active</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span>Milestone 7 Complete: Future Forecasting & Inference Engine Active</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
             AI Forecast — Intelligent AI/ML Forecasting Platform
           </h1>
           <p className="text-sm md:text-base text-slate-300 leading-relaxed">
-            Full-stack machine learning forecasting suite for BTech 5th-semester viva and demonstration. Real out-of-sample metrics (MAE, MSE, RMSE, R²), comparison leaderboard, and Actual vs Predicted validation curves.
+            Full-stack machine learning forecasting suite for BTech 5th-semester viva and demonstration. Real out-of-sample recursive predictions (7, 14, 30 days), empirical prediction intervals, and CSV export.
           </p>
         </div>
 
         {/* Decorative background glow */}
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 -mt-8 -mr-8 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       {/* Core Telemetry Cards */}
@@ -82,19 +82,19 @@ export default function Dashboard({
           {/* Card 3: Forecast Status */}
           <StatusCard
             title="Forecast Status"
-            value="No Run"
-            subtitle="Predictive engine standing by"
-            badgeText="Standby"
-            badgeType="info"
+            value="Engine Active"
+            subtitle="Recursive 7, 14, 30-day projection"
+            badgeText="Operational"
+            badgeType="success"
             icon={LineChart}
-            accentColor="emerald"
+            accentColor="purple"
           />
 
           {/* Card 4: System Status */}
           <StatusCard
             title="System Status"
             value={backendStatus.healthy ? "Operational" : "Connecting"}
-            subtitle={backendStatus.healthy ? "FastAPI Backend v0.5.0" : "Verifying API health"}
+            subtitle={backendStatus.healthy ? "FastAPI Backend v0.7.0" : "Verifying API health"}
             badgeText={backendStatus.healthy ? "API Online" : "Checking"}
             badgeType={backendStatus.healthy ? "success" : "warning"}
             icon={Activity}
@@ -221,22 +221,22 @@ export default function Dashboard({
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
             </div>
 
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
-              <span className="font-mono font-bold text-indigo-400 mt-0.5">M6</span>
+            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
+              <span className="font-mono font-bold text-emerald-400 mt-0.5">M6</span>
               <div>
                 <p className="font-medium text-white">Model Evaluation & Benchmarking</p>
                 <p className="text-slate-400 text-[11px]">MAE, MSE, RMSE, R² comparison table and Actual vs Predicted curves.</p>
               </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold uppercase">Ready</span>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold uppercase">Done</span>
             </div>
 
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60 opacity-80">
-              <span className="font-mono font-bold text-slate-500 mt-0.5">M7</span>
+            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <span className="font-mono font-bold text-purple-400 mt-0.5">M7</span>
               <div>
-                <p className="font-medium text-slate-300">Future Forecasting Engine</p>
-                <p className="text-slate-500 text-[11px]">Iterative recursive multi-step forecasting with prediction intervals.</p>
+                <p className="font-medium text-white">Future Forecasting Engine</p>
+                <p className="text-slate-400 text-[11px]">Iterative recursive multi-step forecasting with prediction intervals & CSV export.</p>
               </div>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Next Milestone</span>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold uppercase">Ready</span>
             </div>
           </div>
         </div>

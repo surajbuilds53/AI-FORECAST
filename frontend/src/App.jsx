@@ -7,6 +7,7 @@ import PreprocessingPage from './pages/PreprocessingPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ModelsPage from './pages/ModelsPage';
 import EvaluationPage from './pages/EvaluationPage';
+import ForecastPage from './pages/ForecastPage';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { TrendingUp, Settings, Info } from 'lucide-react';
 
@@ -105,7 +106,11 @@ export default function App() {
             />
           )}
 
-          {currentTab === 'forecasts' && renderTabPlaceholder('Forecasting & Inference', TrendingUp, 'Milestone 7', 'Generate future predictions for 7, 14, or 30 days, view historical vs predicted charts, and export results.')}
+          {currentTab === 'forecasts' && (
+            <ForecastPage 
+              onNavigate={(tab) => setCurrentTab(tab)}
+            />
+          )}
           {currentTab === 'settings' && renderTabPlaceholder('Platform Settings', Settings, 'Milestone 1', 'Configure API endpoints, database connection strings, and telemetry preferences.')}
         </main>
       </div>

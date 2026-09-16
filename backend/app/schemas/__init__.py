@@ -24,6 +24,13 @@ from app.schemas.evaluation import (
     ModelComparisonItem,
     ModelComparisonResponse,
 )
+from app.schemas.forecast import (
+    ForecastRequest,
+    HistoricalPoint,
+    ForecastPoint,
+    ForecastSummary,
+    ForecastResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -46,4 +53,9 @@ __all__ = [
     "ModelEvaluationResponse",
     "ModelComparisonItem",
     "ModelComparisonResponse",
+    "ForecastRequest",
+    "HistoricalPoint",
+    "ForecastPoint",
+    "ForecastSummary",
+    "ForecastResponse",
 ]
